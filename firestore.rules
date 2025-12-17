@@ -1,0 +1,28 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Blogs collection
+    match /blogs/{blogId} {
+      // Anyone can read published blogs
+      allow read: if resource.data.published == true || isAuthenticated();
+      // Only authenticated users (admins) can create, update, delete
+      allow create, update, delete: if isAuthenticated();
+    }
+    
+    // Comments collection
+    match /comments/{commentId} {
+      // Anyone can read non-hidden comments
+      allow read: if !resource.data.get('hidden', false) || isAuthenticated();
+      // Anyone can create comments
+      allow create: if true;
+      // Only authenticated users (admins) can update or delete comments
+      allow update, delete: if isAuthenticated();
+    }
+  }
+}
